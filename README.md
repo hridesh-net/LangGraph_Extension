@@ -1,16 +1,19 @@
 ![Header Image](images/Langgraph_header.png)
 
-# graph README
+# LangGraph Visualizer
 
-This is the README for your extension "graph". After writing up a brief description, we recommend including the following sections.
+LangGraph Visualizer is a Visual Studio Code (VS Code) extension that provides real-time visual representations of multi-agent LangGraph projects. It enables developers to intuitively understand and monitor the flow and interactions of agents within their projects.
+
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Real-Time Visualization:** Automatically updates the graph as the langgraph.json file changes, reflecting the current state of your project.
 
-For example if there is an image subfolder under your extension project workspace:
+- **Interactive Interface:** Allows users to explore agent nodes and their connections within the graph.
 
-\!\[feature X\]\(images/feature-x.png\)
+- **Seamless Integration:** Easily integrates into your VS Code workflow, enhancing productivity without disrupting your development process.
+
+
 
 > Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
