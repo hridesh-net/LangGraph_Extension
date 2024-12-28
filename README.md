@@ -1,3 +1,5 @@
+![Header Image](images/Langgraph_header.png)
+
 # graph README
 
 This is the README for your extension "graph". After writing up a brief description, we recommend including the following sections.
