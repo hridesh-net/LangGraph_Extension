@@ -41,12 +41,14 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.ViewColumn.One,
 				{
 					enableScripts: true,
-					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))],
+					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src', 'webview', 'ext-app', 'build'))],
 					retainContextWhenHidden: true, // Retain webview state when hidden
 				}
 			);
 
-			currentPanel.webview.html = getWebviewContent(currentPanel.webview, context.extensionPath);
+			const appPath = path.join(context.extensionPath, 'src', 'webview', 'ext-app', 'build', 'index.html');
+
+			currentPanel.webview.html = getWebviewContent(panel.webview, appPath);
 
 			// Load initial data
 			sendGraphData(currentPanel);
@@ -93,30 +95,47 @@ function sendGraphData(panel: vscode.WebviewPanel) {
 	}
 }
 
-function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
-	const scriptPathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'main.js'));
-	const stylePathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'node.css'));
-	const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
-	const styleUri = webview.asWebviewUri(stylePathOnDisk);
-
-	const nonce = getNonce();
-
-	return `<!DOCTYPE html>
-	<html lang="en">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-	<head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>LangGraph Visualizer</title>
-	  <link rel="stylesheet" type="text/css" href="${styleUri}">
-	  <script nonce="${nonce}" src="${scriptUri}"></script>
-	  <script nonce="${nonce}" src="https://d3js.org/d3.v7.min.js"></script>
-	</head>
-	<body>
-	  <div id="graph"></div>
-	</body>
-	</html>`;
+function getWebviewContent(webview: vscode.Webview, filePath: string): string {
+    const fileUri = vscode.Uri.file(filePath).with({ scheme: 'vscode-resource' });
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>LangGraph Visualizer</title>
+            </head>
+            <body>
+                <script src="${fileUri}"></script>
+            </body>
+        </html>
+    `;
 }
+
+// function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
+// 	const scriptPathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'main.js'));
+// 	const stylePathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'node.css'));
+// 	const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
+// 	const styleUri = webview.asWebviewUri(stylePathOnDisk);
+
+// 	const nonce = getNonce();
+
+// 	return `<!DOCTYPE html>
+// 	<html lang="en">
+// 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+// 	<head>
+// 	  <meta charset="UTF-8">
+// 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// 	  <title>LangGraph Visualizer</title>
+// 	  <link rel="stylesheet" type="text/css" href="${styleUri}">
+// 	  <script nonce="${nonce}" src="${scriptUri}"></script>
+// 	  <script nonce="${nonce}" src="https://d3js.org/d3.v7.min.js"></script>
+// 	</head>
+// 	<body>
+// 	  <div id="graph"></div>
+// 	</body>
+// 	</html>`;
+// }
 
 function getNonce() {
 	let text = '';
