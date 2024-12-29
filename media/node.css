@@ -1,0 +1,61 @@
+/* General styling for the card */
+.node-card {
+    border: 1px solid var(--card-border-color);
+    border-radius: 8px;
+    padding: 8px;
+    font-family: sans-serif;
+    text-align: center;
+    cursor: move;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Card-like shadow */
+    background-clip: padding-box; /* Ensures the shadow respects border radius */
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+}
+
+/* Light theme styles */
+.node-card.light {
+    background-color: #ffffff; /* Light background */
+    color: #000000; /* Dark text */
+    --card-border-color: #ddd;
+}
+
+/* Dark theme styles */
+.node-card.dark {
+    background-color: #2e2e2e; /* Dark background */
+    color: #f0f0f0; /* Light text */
+    --card-border-color: #444;
+}
+
+/* Input field inside the card */
+.node-card input {
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 12px;
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* Light theme input */
+.node-card.light input {
+    background-color: #f9f9f9;
+    color: #000000;
+    --input-border-color: #ccc;
+}
+
+/* Dark theme input */
+.node-card.dark input {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+    --input-border-color: #555;
+}
+
+/* Add some hover and focus effects for a better UI */
+.node-card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Intensify shadow on hover */
+}
+
+.node-card input:focus {
+    border-color: var(--card-border-color); /* Match border color to the card */
+    outline: none; /* Remove default browser focus styles */
+}

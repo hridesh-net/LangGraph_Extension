@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "graph" is now active!');
 	console.log(context.extensionPath)
 
-	let panel: vscode.WebviewPanel =  vscode.window.createWebviewPanel(
+	let panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
 		'langGraphVisualizer',
 		'LangGraph Visualizer',
 		vscode.ViewColumn.One,
@@ -122,17 +122,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
 	const scriptPathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'main.js'));
+	const stylePathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'node.css'));
 	const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
+	const styleUri = webview.asWebviewUri(stylePathOnDisk);
 
 	const nonce = getNonce();
 
 	return `<!DOCTYPE html>
 	<html lang="en">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
 	<head>
 	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	  <title>LangGraph Visualizer</title>
+	  <link rel="stylesheet" type="text/css" href="${styleUri}">
 	  <script nonce="${nonce}" src="${scriptUri}"></script>
 	  <script nonce="${nonce}" src="https://d3js.org/d3.v7.min.js"></script>
 	</head>
