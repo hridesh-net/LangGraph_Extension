@@ -17,6 +17,14 @@
         "command": "langGraphVisualizer.show",
         "title": "LangGraph Visualizer"
       }
+    ],
+    "keybindings": [
+        {
+            "command": "langGraphVisualizer.show",
+            "key": "ctrl+shift+l",
+            "mac": "cmd+shift+l",
+            "when": "editorTextFocus"
+        }
     ]
   },
   "scripts": {

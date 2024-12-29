@@ -4,6 +4,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
+let currentPanel: vscode.WebviewPanel | null = null;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -28,96 +30,67 @@ export function activate(context: vscode.ExtensionContext) {
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	const disposable = vscode.commands.registerCommand('langGraphVisualizer.show', () => {
-		// if (panel) {
-		// 	panel.reveal(vscode.ViewColumn.One);
-		// } else {
-		// 	panel = vscode.window.createWebviewPanel(
-		// 		'langGraphVisualizer',
-		// 		'LangGraph Visualizer',
-		// 		vscode.ViewColumn.One,
-		// 		{
-		// 			enableScripts: true,
-		// 			localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))]
-		// 		}
-		// 	);
-		// }
-
-		panel.webview.html = getWebviewContent(panel.webview, context.extensionPath);
-		// Handle messages from the webview
-		panel.webview.onDidReceiveMessage(
-			message => {
-				switch (message.command) {
-					case 'alert':
-						vscode.window.showErrorMessage(message.text);
-						return;
+		if (currentPanel) {
+			// If a panel already exists, reveal it instead of creating a new one
+			currentPanel.reveal(vscode.ViewColumn.One);
+		} else {
+			// Create a new webview panel
+			currentPanel = vscode.window.createWebviewPanel(
+				'langGraphVisualizer',
+				'LangGraph Visualizer',
+				vscode.ViewColumn.One,
+				{
+					enableScripts: true,
+					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))],
+					retainContextWhenHidden: true, // Retain webview state when hidden
 				}
-			},
-			undefined,
-			context.subscriptions
-		);
+			);
 
-		// panel.onDidDispose(() => {
-		// 	panel = undefined;
-		// });
+			currentPanel.webview.html = getWebviewContent(currentPanel.webview, context.extensionPath);
 
-		// Load and send the LangGraph data to the webview
-		const langGraphData = loadLangGraphData();
+			// Load initial data
+			sendGraphData(currentPanel);
 
-		if (langGraphData) {
-			panel.webview.postMessage({ command: 'loadData', data: langGraphData });
+			// Handle disposal
+			currentPanel.onDidDispose(() => {
+				currentPanel = null; // Reset the panel instance
+			});
 		}
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Graph!');
 	});
+
+
+	const jsonFilePath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
+	if (fs.existsSync(jsonFilePath)) {
+		const fileWatcher = vscode.workspace.createFileSystemWatcher(jsonFilePath);
+
+		fileWatcher.onDidChange(() => {
+			if (currentPanel) {
+				sendGraphData(currentPanel);
+			}
+		});
+
+		fileWatcher.onDidDelete(() => {
+			if (currentPanel) {
+				vscode.window.showErrorMessage('The langgraph.json file was deleted!');
+			}
+		});
+
+		context.subscriptions.push(fileWatcher);
+	}
+
 	context.subscriptions.push(disposable);
 
-	const langGraphPath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
-	const fileWatcher = vscode.workspace.createFileSystemWatcher(langGraphPath);
 
-	fileWatcher.onDidChange(() => {
-		if (panel) {
-			const langGraphData = loadLangGraphData();
-			if (langGraphData) {
-				panel.webview.postMessage({ command: 'updateGraph', data: langGraphData });
-			}
-		}
-	});
+}
 
-	context.subscriptions.push(fileWatcher);
-
-
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('extension.showLangGraph', () => {
-	// 		const panel = vscode.window.createWebviewPanel(
-	// 			'langGraphVisualizer',
-	// 			'LangGraph Visualizer',
-	// 			vscode.ViewColumn.One,
-	// 			{
-	// 				enableScripts: true,
-	// 				localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))]
-	// 			}
-	// 		);
-
-	// 		panel.webview.html = getWebviewContent(panel.webview, context.extensionPath);
-	// 		// Handle messages from the webview
-	// 		panel.webview.onDidReceiveMessage(
-	// 			message => {
-	// 				switch (message.command) {
-	// 					case 'alert':
-	// 						vscode.window.showErrorMessage(message.text);
-	// 						return;
-	// 				}
-	// 			},
-	// 			undefined,
-	// 			context.subscriptions
-	// 		);
-
-	// 		// Load and send the LangGraph data to the webview
-	// 		const langGraphData = loadLangGraphData();
-	// 		panel.webview.postMessage({ command: 'loadData', data: langGraphData });
-	// 	})
-	// );
+function sendGraphData(panel: vscode.WebviewPanel) {
+	const jsonFilePath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
+	if (fs.existsSync(jsonFilePath)) {
+		const jsonData = fs.readFileSync(jsonFilePath, 'utf-8');
+		panel.webview.postMessage({ command: 'updateGraph', data: JSON.parse(jsonData) });
+	} else {
+		vscode.window.showErrorMessage('The langgraph.json file does not exist in the workspace!');
+	}
 }
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
