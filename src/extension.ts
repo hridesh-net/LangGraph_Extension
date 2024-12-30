@@ -41,12 +41,12 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.ViewColumn.One,
 				{
 					enableScripts: true,
-					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src', 'webview', 'ext-app', 'build'))],
+					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src', 'webview', 'ext-app'))],
 					retainContextWhenHidden: true, // Retain webview state when hidden
 				}
 			);
 
-			const appPath = path.join(context.extensionPath, 'src', 'webview', 'ext-app', 'build', 'index.html');
+			const appPath = path.join(context.extensionPath, 'src', 'webview', 'ext-app');
 
 			currentPanel.webview.html = getWebviewContent(panel.webview, appPath);
 
@@ -95,21 +95,46 @@ function sendGraphData(panel: vscode.WebviewPanel) {
 	}
 }
 
-function getWebviewContent(webview: vscode.Webview, filePath: string): string {
-    const fileUri = vscode.Uri.file(filePath).with({ scheme: 'vscode-resource' });
-    return `
-        <!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>LangGraph Visualizer</title>
-            </head>
-            <body>
-                <script src="${fileUri}"></script>
-            </body>
-        </html>
-    `;
+function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
+
+	const buildPath = path.join(extensionPath, 'build')
+	const indexPath = path.join(extensionPath, 'build', 'index.html')
+	const indexUri = webview.asWebviewUri(vscode.Uri.file(indexPath));
+
+    const baseUri = webview.asWebviewUri(vscode.Uri.file(buildPath));
+
+	let indexHtml = fs.readFileSync(indexPath, 'utf8');
+
+	indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+        // Resolve paths relative to the build directory
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+		console.log('asset', assetUri)
+        return `${attr}="${assetUri}"`;
+    });
+
+    return indexHtml;
+    // const reactAppPath = path.join(extensionPath);
+
+    // const reactAppUri = webview.asWebviewUri(vscode.Uri.file(reactAppPath));
+	// console.log(reactAppPath)
+	// console.log(reactAppUri)
+
+    // return `
+    // <!DOCTYPE html>
+    // <html lang="en">
+    //     <head>
+    //         <meta charset="UTF-8">
+    //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    //         <title>LangGraph Visualizer</title>
+    //     </head>
+    //     <body>
+	// 	hello from graph
+    //         <iframe
+    //             src="${reactAppUri}"
+    //             style="width: 100%; height: 100%; border: none;"
+    //         ></iframe>
+    //     </body>
+    // </html>`;
 }
 
 // function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
