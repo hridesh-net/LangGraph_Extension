@@ -113,28 +113,7 @@ function getWebviewContent(webview: vscode.Webview, extensionPath: string): stri
     });
 
     return indexHtml;
-    // const reactAppPath = path.join(extensionPath);
 
-    // const reactAppUri = webview.asWebviewUri(vscode.Uri.file(reactAppPath));
-	// console.log(reactAppPath)
-	// console.log(reactAppUri)
-
-    // return `
-    // <!DOCTYPE html>
-    // <html lang="en">
-    //     <head>
-    //         <meta charset="UTF-8">
-    //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    //         <title>LangGraph Visualizer</title>
-    //     </head>
-    //     <body>
-	// 	hello from graph
-    //         <iframe
-    //             src="${reactAppUri}"
-    //             style="width: 100%; height: 100%; border: none;"
-    //         ></iframe>
-    //     </body>
-    // </html>`;
 }
 
 // function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
