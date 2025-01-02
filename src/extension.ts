@@ -100,15 +100,32 @@ function getWebviewContent(webview: vscode.Webview, extensionPath: string): stri
 	const buildPath = path.join(extensionPath, 'build')
 	const indexPath = path.join(extensionPath, 'build', 'index.html')
 	const indexUri = webview.asWebviewUri(vscode.Uri.file(indexPath));
+	const manifestPath = path.join(buildPath, 'asset-manifest.json');
 
     const baseUri = webview.asWebviewUri(vscode.Uri.file(buildPath));
 
 	let indexHtml = fs.readFileSync(indexPath, 'utf8');
+	const assetManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
+	// indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+    //     // Resolve paths relative to the build directory
+    //     const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+	// 	console.log('asset', assetUri)
+    //     return `${attr}="${assetUri}"`;
+    // });
 	indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
-        // Resolve paths relative to the build directory
-        const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
-		console.log('asset', assetUri)
+        // Ignore external or anchor links
+        if (url.startsWith('http') || url.startsWith('#')) {
+            return `${attr}="${url}"`;
+        }
+
+        // Check if the path exists in asset-manifest.json
+        const resolvedPath = assetManifest.files[url] || url;
+
+        // Resolve the final path using webview.asWebviewUri
+        const assetPath = path.join(buildPath, resolvedPath);
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(assetPath));
+        console.log(`Transforming: ${url} -> ${assetUri}`);
         return `${attr}="${assetUri}"`;
     });
 
