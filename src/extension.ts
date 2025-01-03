@@ -41,12 +41,14 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.ViewColumn.One,
 				{
 					enableScripts: true,
-					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))],
+					localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'src', 'webview', 'ext-app'))],
 					retainContextWhenHidden: true, // Retain webview state when hidden
 				}
 			);
 
-			currentPanel.webview.html = getWebviewContent(currentPanel.webview, context.extensionPath);
+			const appPath = path.join(context.extensionPath, 'src', 'webview', 'ext-app');
+
+			currentPanel.webview.html = getWebviewContent(panel.webview, appPath);
 
 			// Load initial data
 			sendGraphData(currentPanel);
@@ -84,39 +86,106 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function sendGraphData(panel: vscode.WebviewPanel) {
-	const jsonFilePath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
-	if (fs.existsSync(jsonFilePath)) {
-		const jsonData = fs.readFileSync(jsonFilePath, 'utf-8');
-		panel.webview.postMessage({ command: 'updateGraph', data: JSON.parse(jsonData) });
-	} else {
-		vscode.window.showErrorMessage('The langgraph.json file does not exist in the workspace!');
-	}
+    const jsonFilePath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
+    if (fs.existsSync(jsonFilePath)) {
+        try {
+            const jsonData = fs.readFileSync(jsonFilePath, 'utf-8');
+            panel.webview.postMessage({ command: 'updateGraph', data: JSON.parse(jsonData) });
+        } catch (error) {
+            vscode.window.showErrorMessage('Error reading langgraph.json: ' + error);
+        }
+    } else {
+        vscode.window.showErrorMessage('The langgraph.json file does not exist in the workspace!');
+    }
 }
+
+// function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
+
+// 	const buildPath = path.join(extensionPath, 'build')
+// 	const indexPath = path.join(extensionPath, 'build', 'index.html')
+// 	const indexUri = webview.asWebviewUri(vscode.Uri.file(indexPath));
+// 	const manifestPath = path.join(buildPath, 'asset-manifest.json');
+
+// 	const baseUri = webview.asWebviewUri(vscode.Uri.file(buildPath));
+
+// 	let indexHtml = fs.readFileSync(indexPath, 'utf8');
+// 	const assetManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+// 	// indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+// 	//     // Resolve paths relative to the build directory
+// 	//     const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+// 	// 	console.log('asset', assetUri)
+// 	//     return `${attr}="${assetUri}"`;
+// 	// });
+// 	// indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+// 	// 	// If URL is already absolute, do not modify
+// 	// 	if (url.startsWith('http') || url.startsWith('https')) {
+// 	// 		return `${attr}="${url}"`;
+// 	// 	}
+
+// 	// 	// Otherwise, transform relative URLs to vscode-resource
+// 	// 	const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+// 	// 	return `${attr}="${assetUri}"`;
+// 	// });
+
+// 	// // Set the base tag in the HTML for resolving static assets
+// 	// indexHtml = indexHtml.replace(
+// 	// 	'</head>',
+// 	// 	`<base href="${baseUri}/"> </head>`
+// 	// );
+
+// 	// return indexHtml;
+// 	// let indexHtml = fs.readFileSync(indexPath, 'utf8');
+
+//     indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+//         const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+//         return `${attr}="${assetUri}"`;
+//     });
+
+//     return indexHtml.replace('<base href="/" />', `<base href="${baseUri}/" />`);
+
+// }
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
-	const scriptPathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'main.js'));
-	const stylePathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'node.css'));
-	const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
-	const styleUri = webview.asWebviewUri(stylePathOnDisk);
+    const buildPath = path.join(extensionPath, 'build');
+    const indexPath = path.join(buildPath, 'index.html');
+    const baseUri = webview.asWebviewUri(vscode.Uri.file(buildPath));
 
-	const nonce = getNonce();
+    let indexHtml = fs.readFileSync(indexPath, 'utf8');
 
-	return `<!DOCTYPE html>
-	<html lang="en">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-	<head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>LangGraph Visualizer</title>
-	  <link rel="stylesheet" type="text/css" href="${styleUri}">
-	  <script nonce="${nonce}" src="${scriptUri}"></script>
-	  <script nonce="${nonce}" src="https://d3js.org/d3.v7.min.js"></script>
-	</head>
-	<body>
-	  <div id="graph"></div>
-	</body>
-	</html>`;
+    // Resolve asset paths
+    indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+        return `${attr}="${assetUri}"`;
+    });
+
+    return indexHtml.replace('<base href="/" />', `<base href="${baseUri}/" />`);
 }
+
+// function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
+// 	const scriptPathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'main.js'));
+// 	const stylePathOnDisk = vscode.Uri.file(path.join(extensionPath, 'media', 'node.css'));
+// 	const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
+// 	const styleUri = webview.asWebviewUri(stylePathOnDisk);
+
+// 	const nonce = getNonce();
+
+// 	return `<!DOCTYPE html>
+// 	<html lang="en">
+// 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+// 	<head>
+// 	  <meta charset="UTF-8">
+// 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// 	  <title>LangGraph Visualizer</title>
+// 	  <link rel="stylesheet" type="text/css" href="${styleUri}">
+// 	  <script nonce="${nonce}" src="${scriptUri}"></script>
+// 	  <script nonce="${nonce}" src="https://d3js.org/d3.v7.min.js"></script>
+// 	</head>
+// 	<body>
+// 	  <div id="graph"></div>
+// 	</body>
+// 	</html>`;
+// }
 
 function getNonce() {
 	let text = '';
