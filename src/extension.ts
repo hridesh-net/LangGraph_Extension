@@ -86,51 +86,80 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function sendGraphData(panel: vscode.WebviewPanel) {
-	const jsonFilePath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
-	if (fs.existsSync(jsonFilePath)) {
-		const jsonData = fs.readFileSync(jsonFilePath, 'utf-8');
-		panel.webview.postMessage({ command: 'updateGraph', data: JSON.parse(jsonData) });
-	} else {
-		vscode.window.showErrorMessage('The langgraph.json file does not exist in the workspace!');
-	}
+    const jsonFilePath = path.join(vscode.workspace.rootPath || '', 'langgraph.json');
+    if (fs.existsSync(jsonFilePath)) {
+        try {
+            const jsonData = fs.readFileSync(jsonFilePath, 'utf-8');
+            panel.webview.postMessage({ command: 'updateGraph', data: JSON.parse(jsonData) });
+        } catch (error) {
+            vscode.window.showErrorMessage('Error reading langgraph.json: ' + error);
+        }
+    } else {
+        vscode.window.showErrorMessage('The langgraph.json file does not exist in the workspace!');
+    }
 }
 
+// function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
+
+// 	const buildPath = path.join(extensionPath, 'build')
+// 	const indexPath = path.join(extensionPath, 'build', 'index.html')
+// 	const indexUri = webview.asWebviewUri(vscode.Uri.file(indexPath));
+// 	const manifestPath = path.join(buildPath, 'asset-manifest.json');
+
+// 	const baseUri = webview.asWebviewUri(vscode.Uri.file(buildPath));
+
+// 	let indexHtml = fs.readFileSync(indexPath, 'utf8');
+// 	const assetManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+// 	// indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+// 	//     // Resolve paths relative to the build directory
+// 	//     const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+// 	// 	console.log('asset', assetUri)
+// 	//     return `${attr}="${assetUri}"`;
+// 	// });
+// 	// indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+// 	// 	// If URL is already absolute, do not modify
+// 	// 	if (url.startsWith('http') || url.startsWith('https')) {
+// 	// 		return `${attr}="${url}"`;
+// 	// 	}
+
+// 	// 	// Otherwise, transform relative URLs to vscode-resource
+// 	// 	const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+// 	// 	return `${attr}="${assetUri}"`;
+// 	// });
+
+// 	// // Set the base tag in the HTML for resolving static assets
+// 	// indexHtml = indexHtml.replace(
+// 	// 	'</head>',
+// 	// 	`<base href="${baseUri}/"> </head>`
+// 	// );
+
+// 	// return indexHtml;
+// 	// let indexHtml = fs.readFileSync(indexPath, 'utf8');
+
+//     indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+//         const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
+//         return `${attr}="${assetUri}"`;
+//     });
+
+//     return indexHtml.replace('<base href="/" />', `<base href="${baseUri}/" />`);
+
+// }
+
 function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
-
-	const buildPath = path.join(extensionPath, 'build')
-	const indexPath = path.join(extensionPath, 'build', 'index.html')
-	const indexUri = webview.asWebviewUri(vscode.Uri.file(indexPath));
-	const manifestPath = path.join(buildPath, 'asset-manifest.json');
-
+    const buildPath = path.join(extensionPath, 'build');
+    const indexPath = path.join(buildPath, 'index.html');
     const baseUri = webview.asWebviewUri(vscode.Uri.file(buildPath));
 
-	let indexHtml = fs.readFileSync(indexPath, 'utf8');
-	const assetManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    let indexHtml = fs.readFileSync(indexPath, 'utf8');
 
-	// indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
-    //     // Resolve paths relative to the build directory
-    //     const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
-	// 	console.log('asset', assetUri)
-    //     return `${attr}="${assetUri}"`;
-    // });
-	indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
-        // Ignore external or anchor links
-        if (url.startsWith('http') || url.startsWith('#')) {
-            return `${attr}="${url}"`;
-        }
-
-        // Check if the path exists in asset-manifest.json
-        const resolvedPath = assetManifest.files[url] || url;
-
-        // Resolve the final path using webview.asWebviewUri
-        const assetPath = path.join(buildPath, resolvedPath);
-        const assetUri = webview.asWebviewUri(vscode.Uri.file(assetPath));
-        console.log(`Transforming: ${url} -> ${assetUri}`);
+    // Resolve asset paths
+    indexHtml = indexHtml.replace(/(href|src)="([^"]+)"/g, (_, attr, url) => {
+        const assetUri = webview.asWebviewUri(vscode.Uri.file(path.join(buildPath, url)));
         return `${attr}="${assetUri}"`;
     });
 
-    return indexHtml;
-
+    return indexHtml.replace('<base href="/" />', `<base href="${baseUri}/" />`);
 }
 
 // function getWebviewContent(webview: vscode.Webview, extensionPath: string): string {
