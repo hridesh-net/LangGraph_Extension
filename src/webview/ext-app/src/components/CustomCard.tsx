@@ -139,6 +139,7 @@ const CustomCard: React.FC<CustomCardProps> = ({ id, data, selected }) => {
                     </Box>
 
                     {/* Editable Description */}
+                    {data.description && (
                     <Box>
                         <label htmlFor={`description-${id}`}>
                             <textarea
@@ -161,6 +162,7 @@ const CustomCard: React.FC<CustomCardProps> = ({ id, data, selected }) => {
                             />
                         </label>
                     </Box>
+                    )}
                 </CardContent>
             </Card>
         </div>
