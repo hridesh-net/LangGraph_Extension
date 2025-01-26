@@ -75,4 +75,6 @@ LangGraph Visualizer is a Visual Studio Code (VS Code) extension that provides r
 
 ![Extension in Action](images/action.gif)
 
+
+> **Note ->** This is currently in development and Integration of new features to ease things out, so please be patient and supportive thanks. 
 ----
